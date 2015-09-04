@@ -18,7 +18,7 @@ use Ray\Di\AbstractModule;
 use Ray\Di\Scope;
 use Ray\WebFormModule\Annotation\FormValidation;
 
-class FormModule extends AbstractModule
+class WebFormModule extends AbstractModule
 {
     /**
      * {@inheritdoc}
@@ -31,6 +31,7 @@ class FormModule extends AbstractModule
         $this->bind(FilterInterface::class)->to(Filter::class);
         $this->bind(HelperLocatorFactory::class);
         $this->bind(AntiCsrfInterface::class)->to(AntiCsrf::class)->in(Scope::SINGLETON);
+        $this->bind(FailureHandlerInterface::class)->to(OnFailureMethodHandler::class);
         $this->bindInterceptor(
             $this->matcher->any(),
             $this->matcher->annotatedWith(FormValidation::class),

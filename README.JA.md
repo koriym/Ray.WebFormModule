@@ -4,15 +4,15 @@
 [![Code Coverage](https://scrutinizer-ci.com/g/ray-di/Ray.WebFormModule/badges/coverage.png?b=1.x)](https://scrutinizer-ci.com/g/ray-di/Ray.WebFormModule/?branch=1.x)
 [![Build Status](https://travis-ci.org/ray-di/Ray.WebFormModule.svg?branch=1.x)](https://travis-ci.org/ray-di/Ray.WebFormModule)
 
-An aspect oriented web form module powered by [Aura.Input](https://github.com/auraphp/Aura.Input) and [Ray.Di](https://github.com/ray-di/Ray.Di).
-
-# Getting Started
+Ray.WebFormModuleはアスペクト指向でフォームのバリデーションを行うモジュールです。
+フォームライブラリには[Aura.Input](https://github.com/auraphp/Aura.Input)を使い、
+特定のアプリケーションフレームワークの依存なしで利用できます。
 
 ## Installation
 
 ### Composer install
 
-    $ composer require ray/form-module
+    $ composer require ray/web-form-module
  
 ### Module install
 
@@ -30,9 +30,9 @@ class AppModule extends AbstractModule
 ```
 ## Usage
 
-### Form class
+### Form
 
-We provide two methods on self-initializing form class, one is `init()` method where we add an input field on form and apply fileters and rules. The other method method is `submit()` where it submit data. See more detail at [Aura.Input self-initializing forms](https://github.com/auraphp/Aura.Input/blob/1.x/README.md#self-initializing-forms).
+フォームの`input`要素を登録する`init()`メソッドとフォーム送信を行う`submit()`メソッドを持つフォームクラスを用意します。
 
 ```php
 use Ray\WebFormModule\AbstractAuraForm;
@@ -40,18 +40,17 @@ use Ray\WebFormModule\SetAntiCsrfTrait;
 
 class MyForm extends AbstractAuraForm
 {
-    // for anti CSRF
-    use SetAntiCsrfTrait;
-
     /**
      * {@inheritdoc}
      */
     public function init()
     {
+        // set input fields
         $this->setField('name', 'text')
              ->setAttribs([
                  'id' => 'name'
              ]);
+        // set input filters
         /** @var $filter Filter */
         $filter = $this->getFilter();
         $filter->setRule(
@@ -70,32 +69,17 @@ class MyForm extends AbstractAuraForm
     {
         return $_POST;
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function __toString()
-    {
-        $form = $this->form();
-        // name
-        $form .= $this->helper->tag('div', ['class' => 'form-group']);
-        $form .= $this->helper->tag('label', ['for' => 'name']);
-        $form .= 'Name:';
-        $form .= $this->helper->tag('/label') . PHP_EOL;
-        $form .= $this->input('name');
-        $form .= $this->error('name');
-        $form .= $this->helper->tag('/div') . PHP_EOL;
-        // submit
-        $form .= $this->input('submit');
-        $form .= $this->helper->tag('/form');
-
-        return $form;
-    }
 }
 ```
+ * `init()`メソッドではinput属性を指定してフォームを登録し、フィルターやルールを適用します。
+フォームクラスで利用できるメソッドについて詳しく`は[Aura.Input](https://github.com/auraphp/Aura.Input#self-initializing-forms)をご覧ください
+
+ * `submit()メソッド`ではフォームでバリデーションを行うための`$_POST`や`$_GET`を返します。
+
 ### Controller
 
-We annotate the methods which web form validation is required with `@FormValidation`. We can specify form object property name with `name` and failiure method name with `@onFailure`.
+コントローラークラスにフォームをインジェクトします。フォームのバリデーションを行うメソッドを`@FormValidation`で
+アノテートします。この時フォームのプロパティ名を`form`で、バリデーションが失敗したときのメソッドを`onFailure`で指定します。
 
 ```php
 use Ray\Di\Di\Inject;
@@ -135,34 +119,33 @@ class MyController
 ```
 ### View
 
-You can render entire form html when `__toString` is given.
-
-```php
-  echo $form; // render entire form html
-```
-
-or render input element basis.
+フォームの`input`要素やエラーメッセージを取得するには要素名を指定します。
 
 ```php
   echo $form->input('name'); // <input id="name" type="text" name="name" size="20" maxlength="20" />
   echo $form->error('name'); // "Name must be alphabetic only." or blank.
 ```
-## CSRF Protections
+
+### CSRF Protections
+
+CSRF対策を行うためにはフォームにCSRFオブジェクトをセットします。
 
 ```php
 use Ray\WebFormModule\SetAntiCsrfTrait;
 
-class MyController 
+class MyForm extends AbstractAuraForm
 {
     use SetAntiCsrfTrait;
 ```
-You can provide your custom `AntiCsrf` class. See more detail at [Aura.Input](https://github.com/auraphp/Aura.Input#applying-csrf-protections)
 
-### Demo
+セキュリティレベルを高めるためにはユーザーの認証を含んだカスタムCsrfクラスを作成してフォームクラスにセットします。
+詳しくはAura.Inputの[Applying CSRF Protections](https://github.com/auraphp/Aura.Input#applying-csrf-protections)をご覧ください。
+
+## Demo
 
     $ php -S docs/demo/1.csrf/web.php
 
-### Requirements
+## Requirements
 
  * PHP 5.5+
  * hhvm
