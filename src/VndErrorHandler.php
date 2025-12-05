@@ -1,62 +1,69 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * This file is part of the Ray.WebFormModule package.
  *
  * @license http://opensource.org/licenses/MIT MIT
  */
+
 namespace Ray\WebFormModule;
 
-use Doctrine\Common\Annotations\Reader;
 use Ray\Aop\MethodInvocation;
 use Ray\WebFormModule\Annotation\AbstractValidation;
 use Ray\WebFormModule\Annotation\VndError;
 use Ray\WebFormModule\Exception\ValidationException;
+use ReflectionMethod;
 
 final class VndErrorHandler implements FailureHandlerInterface
 {
     /**
-     * @var Reader
-     */
-    private $reader;
-
-    public function __construct(Reader $reader)
-    {
-        $this->reader = $reader;
-    }
-
-    /**
      * {@inheritdoc}
      */
-    public function handle(AbstractValidation $formValidation, MethodInvocation $invocation, AbstractForm $form)
+    public function handle(AbstractValidation $formValidation, MethodInvocation $invocation, AbstractForm $form): never
     {
         unset($formValidation);
-        $vndError = $this->reader->getMethodAnnotation($invocation->getMethod(), VndError::class);
+        $vndError = $this->getVndErrorAttribute($invocation->getMethod());
         $error = new FormValidationError($this->makeVndError($form, $vndError));
-        $e = new ValidationException('Validation failed.', 400, null, $error);
 
-        throw $e;
+        throw new ValidationException('Validation failed.', 400, null, $error);
     }
 
-    private function makeVndError(AbstractForm $form, VndError $vndError = null)
+    private function getVndErrorAttribute(ReflectionMethod $method): ?VndError
+    {
+        $attributes = $method->getAttributes(VndError::class);
+        if ($attributes === []) {
+            return null;
+        }
+
+        return $attributes[0]->newInstance();
+    }
+
+    /** @return array<string, mixed> */
+    private function makeVndError(AbstractForm $form, ?VndError $vndError = null): array
     {
         $body = ['message' => 'Validation failed'];
-        $body['path'] = isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : '';
+        $body['path'] = $_SERVER['PATH_INFO'] ?? '';
         $body['validation_messages'] = $form->getFailureMessages();
         $body = $vndError ? $this->optionalAttribute($vndError) + $body : $body;
 
         return $body;
     }
 
-    private function optionalAttribute(VndError $vndError)
+    /** @return array<string, string> */
+    private function optionalAttribute(VndError $vndError): array
     {
         $body = [];
-        if ($vndError->message) {
+        if ($vndError->message !== '') {
             $body['message'] = $vndError->message;
         }
-        if ($vndError->path) {
+
+        if ($vndError->path !== '') {
             $body['path'] = $vndError->path;
         }
-        if ($vndError->logref) {
+
+        if ($vndError->logref !== '') {
             $body['logref'] = $vndError->logref;
         }
 

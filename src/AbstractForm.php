@@ -1,11 +1,16 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * This file is part of the Ray.WebFormModule package.
  *
  * @license http://opensource.org/licenses/MIT MIT
  */
+
 namespace Ray\WebFormModule;
 
+use ArrayIterator;
 use Aura\Filter\FilterFactory;
 use Aura\Filter\SubjectFilter;
 use Aura\Html\HelperLocator;
@@ -13,6 +18,8 @@ use Aura\Html\HelperLocatorFactory;
 use Aura\Input\AntiCsrfInterface;
 use Aura\Input\BuilderInterface;
 use Aura\Input\Fieldset;
+use Ray\Di\Di\Inject;
+use Ray\Di\Di\PostConstruct;
 use Ray\WebFormModule\Exception\CsrfViolationException;
 
 abstract class AbstractForm extends Fieldset implements FormInterface
@@ -47,13 +54,7 @@ abstract class AbstractForm extends Fieldset implements FormInterface
         $this->init();
     }
 
-    /**
-     * @param BuilderInterface     $builder
-     * @param FilterFactory        $filterFactory
-     * @param HelperLocatorFactory $helperFactory
-     *
-     * @\Ray\Di\Di\Inject
-     */
+    #[Inject]
     public function setBaseDependencies(
         BuilderInterface $builder,
         FilterFactory $filterFactory,
@@ -69,9 +70,7 @@ abstract class AbstractForm extends Fieldset implements FormInterface
         $this->antiCsrf = $antiCsrf;
     }
 
-    /**
-     * @\Ray\Di\Di\PostConstruct
-     */
+    #[PostConstruct]
     public function postConstruct()
     {
         $this->init();
@@ -159,11 +158,9 @@ abstract class AbstractForm extends Fieldset implements FormInterface
 
     /**
      * Returns all the fields collection
-     *
-     * @return \ArrayIterator
      */
-    public function getIterator()
+    public function getIterator(): ArrayIterator
     {
-        return new \ArrayIterator($this->inputs);
+        return new ArrayIterator($this->inputs);
     }
 }

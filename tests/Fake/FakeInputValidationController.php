@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ray\WebFormModule;
 
 use Ray\Di\Di\Inject;
@@ -8,24 +10,16 @@ use Ray\WebFormModule\Annotation\InputValidation;
 
 class FakeInputValidationController
 {
-    /**
-     * @var FormInterface
-     */
-    protected $form;
+    protected FormInterface $form;
 
-    /**
-     * @Inject
-     * @Named("contact_form")
-     */
-    public function setForm(FormInterface $form)
+    #[Inject]
+    public function setForm(#[Named('contact_form')] FormInterface $form): void
     {
-        $this->form  = $form;
+        $this->form = $form;
     }
 
-    /**
-     * @InputValidation
-     */
-    public function createAction($name)
+    #[InputValidation]
+    public function createAction(string $name): void
     {
     }
 }

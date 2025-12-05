@@ -1,135 +1,127 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * This file is part of the Ray.WebFormModule package.
  *
  * @license http://opensource.org/licenses/MIT MIT
  */
+
 namespace Ray\WebFormModule;
 
-use Doctrine\Common\Annotations\AnnotationReader;
-use Ray\Aop\Arguments;
+use PHPUnit\Framework\TestCase;
 use Ray\Aop\ReflectiveMethodInvocation;
 use Ray\WebFormModule\Exception\InvalidFormPropertyException;
 use Ray\WebFormModule\Exception\InvalidOnFailureMethod;
 use Ray\WebFormModule\Exception\ValidationException;
 
-class AuraInputInterceptorTest extends \PHPUnit_Framework_TestCase
+class AuraInputInterceptorTest extends TestCase
 {
-    /**
-     * @var ReflectiveMethodInvocation
-     */
-    private $methodInvocation;
-
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
     }
 
-    /**
-     * @param $method
-     */
-    public function getMethodInvocation($method, array $submit, FailureHandlerInterface $handler = null)
+    public function getMethodInvocation(string $method, array $submit, ?FailureHandlerInterface $handler = null): ReflectiveMethodInvocation
     {
-        $handler = $handler ?: new OnFailureMethodHandler;
+        $handler = $handler ?? new OnFailureMethodHandler();
         $object = $this->getController($submit);
 
         return new ReflectiveMethodInvocation(
             $object,
-            new \ReflectionMethod($object, $method),
-            new Arguments($submit),
+            $method,
+            $submit,
             [
-                new AuraInputInterceptor(new AnnotationReader, $handler)
+                new AuraInputInterceptor($handler),
             ]
         );
     }
 
-    public function getController(array $submit)
+    public function getController(array $submit): FakeController
     {
-        $controller = new FakeController;
-        /** @var $fakeForm FakeForm */
-        $fakeForm = (new FormFactory)->newInstance(FakeForm::class);
+        $controller = new FakeController();
+        $fakeForm = (new FormFactory())->newInstance(FakeForm::class);
         $fakeForm->setSubmit($submit);
         $controller->setForm($fakeForm);
 
         return $controller;
     }
 
-    public function proceed($controller)
+    public function proceed(object $controller): void
     {
         $invocation = new ReflectiveMethodInvocation(
             $controller,
-            new \ReflectionMethod($controller, 'createAction'),
-            new Arguments([]),
+            'createAction',
+            [],
             [
-                new AuraInputInterceptor(new AnnotationReader, new OnFailureMethodHandler)
+                new AuraInputInterceptor(new OnFailureMethodHandler()),
             ]
         );
         $invocation->proceed();
     }
 
-    public function testProceedFailed()
+    public function testProceedFailed(): void
     {
         $invocation = $this->getMethodInvocation('createAction', []);
         $result = $invocation->proceed();
         $this->assertSame('400', $result);
     }
 
-    public function testProceed()
+    public function testProceed(): void
     {
         $invocation = $this->getMethodInvocation('createAction', ['BEAR']);
         $result = $invocation->proceed();
         $this->assertSame('201', $result);
     }
 
-    public function invalidControllerProvider()
+    /** @return array<array{object}> */
+    public static function invalidControllerProvider(): array
     {
         return [
-            [new FakeInvalidController1],
-            [new FakeInvalidController2]
+            [new FakeInvalidController1()],
+            [new FakeInvalidController2()],
         ];
     }
 
     /**
      * @dataProvider invalidControllerProvider
-     *
-     * @param $controller
      */
-    public function testInvalidFormPropertyByMissingProperty($controller)
+    public function testInvalidFormPropertyByMissingProperty(object $controller): void
     {
-        $this->setExpectedException(InvalidFormPropertyException::class);
+        $this->expectException(InvalidFormPropertyException::class);
         $this->proceed($controller);
     }
 
-    public function testInvalidFormPropertyException()
+    public function testInvalidFormPropertyException(): void
     {
-        $this->setExpectedException(InvalidOnFailureMethod::class);
-        $controller = new FakeInvalidController3;
-        /** @var $fakeForm FakeForm */
-        $fakeForm = (new FormFactory)->newInstance(FakeForm::class);
+        $this->expectException(InvalidOnFailureMethod::class);
+        $controller = new FakeInvalidController3();
+        $fakeForm = (new FormFactory())->newInstance(FakeForm::class);
         $fakeForm->setSubmit(['name' => '']);
         $controller->setForm($fakeForm);
         $this->proceed($controller);
     }
 
-    public function testInvalidFormPropertyByInvalidInstance()
+    public function testInvalidFormPropertyByInvalidInstance(): void
     {
-        $this->setExpectedException(InvalidFormPropertyException::class);
-        $object = new FakeInvalidController1;
+        $this->expectException(InvalidFormPropertyException::class);
+        $object = new FakeInvalidController1();
         $invocation = new ReflectiveMethodInvocation(
             $object,
-            new \ReflectionMethod($object, 'createAction'),
-            new Arguments(['name' => '']),
+            'createAction',
+            ['name' => ''],
             [
-                new AuraInputInterceptor(new AnnotationReader, new OnFailureMethodHandler)
+                new AuraInputInterceptor(new OnFailureMethodHandler()),
             ]
         );
         $invocation->proceed();
     }
 
-    public function testProceedWithVndErrorHandler()
+    public function testProceedWithVndErrorHandler(): void
     {
         try {
-            $invocation = $this->getMethodInvocation('createAction', [], new VndErrorHandler(new AnnotationReader));
+            $invocation = $this->getMethodInvocation('createAction', [], new VndErrorHandler());
             $invocation->proceed();
         } catch (ValidationException $e) {
             $this->assertInstanceOf(FormValidationError::class, $e->error);

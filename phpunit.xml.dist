@@ -1,19 +1,21 @@
-<phpunit bootstrap="tests/bootstrap.php">
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+    bootstrap="tests/bootstrap.php"
+    cacheDirectory=".phpunit.cache"
+    executionOrder="depends,defects"
+    colors="true"
+>
     <testsuites>
-        <testsuite>
+        <testsuite name="Ray.WebFormModule Test Suite">
             <directory suffix="Test.php">tests</directory>
         </testsuite>
     </testsuites>
 
-    <logging>
-        <log type="coverage-html" target="build/coverage"/>
-        <log type="coverage-clover" target="build/logs/clover.xml"/>
-        <log type="junit" target="build/logs/junit.xml" logIncompleteSkipped="false"/>
-    </logging>
-
-    <filter>
-        <whitelist>
+    <source>
+        <include>
             <directory suffix=".php">src</directory>
-        </whitelist>
-    </filter>
+        </include>
+    </source>
 </phpunit>

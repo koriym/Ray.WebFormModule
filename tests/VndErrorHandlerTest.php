@@ -1,34 +1,36 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * This file is part of the Ray.WebFormModule package.
  *
  * @license http://opensource.org/licenses/MIT MIT
  */
+
 namespace Ray\WebFormModule;
 
+use PHPUnit\Framework\TestCase;
 use Ray\Di\Injector;
 use Ray\WebFormModule\Exception\ValidationException;
 
-class VndErrorHandlerTest extends \PHPUnit_Framework_TestCase
+class VndErrorHandlerTest extends TestCase
 {
-    /**
-     * @var FakeController
-     */
-    private $controller;
+    private FakeController $controller;
 
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
-        $this->controller = (new Injector(new FakeVndErrorModule, __DIR__ . '/tmp'))->getInstance(FakeController::class);
+        $this->controller = (new Injector(new FakeVndErrorModule(), __DIR__ . '/tmp'))->getInstance(FakeController::class);
     }
 
-    public function testValidationException()
+    public function testValidationException(): void
     {
-        $this->setExpectedException(ValidationException::class);
+        $this->expectException(ValidationException::class);
         $this->controller->createAction('');
     }
 
-    public function testValidationExceptionError()
+    public function testValidationExceptionError(): void
     {
         try {
             $this->controller->createAction('');
@@ -46,10 +48,10 @@ class VndErrorHandlerTest extends \PHPUnit_Framework_TestCase
         }
     }
 
-    public function testVndErrorAnnotation()
+    public function testVndErrorAttribute(): void
     {
-        /** @var $controller FakeControllerVndError */
-        $controller = (new Injector(new FakeVndErrorModule))->getInstance(FakeControllerVndError::class);
+        /** @var FakeControllerVndError $controller */
+        $controller = (new Injector(new FakeVndErrorModule()))->getInstance(FakeControllerVndError::class);
         try {
             $controller->createAction('');
         } catch (ValidationException $e) {

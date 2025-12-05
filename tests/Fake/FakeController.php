@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ray\WebFormModule;
 
 use Ray\Di\Di\Inject;
@@ -8,31 +10,21 @@ use Ray\WebFormModule\Annotation\FormValidation;
 
 class FakeController
 {
-    /**
-     * @var FormInterface
-     */
-    protected $form;
+    protected FormInterface $form;
 
-    /**
-     * @Inject
-     * @Named("contact_form")
-     */
-    public function setForm(FormInterface $form)
+    #[Inject]
+    public function setForm(#[Named('contact_form')] FormInterface $form): void
     {
         $this->form = $form;
     }
 
-    /**
-     * @FormValidation
-     *
-     * = is same as @ FormValidation(form="form", onFailure="createActionValidationFailed")
-     */
-    public function createAction($name)
+    #[FormValidation]
+    public function createAction(string $name): string
     {
         return '201';
     }
 
-    public function createActionValidationFailed()
+    public function createActionValidationFailed(): string
     {
         return '400';
     }
