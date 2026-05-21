@@ -4,41 +4,42 @@
  */
 namespace Ray\WebFormModule;
 
-// a session handler that does nothing, for testing purposes only
-class FakeSessionHandler
-{
-    public $data;
+use SessionHandlerInterface;
 
-    public function close()
+final class FakeSessionHandler implements SessionHandlerInterface
+{
+    private string|null $data = null;
+
+    public function close(): bool
     {
         return true;
     }
 
-    public function destroy($session_id)
+    public function destroy(string $id): bool
     {
         $this->data = null;
 
         return true;
     }
 
-    public function gc($maxlifetime)
+    public function gc(int $max_lifetime): int|false
+    {
+        return 1;
+    }
+
+    public function open(string $path, string $name): bool
     {
         return true;
     }
 
-    public function open($save_path, $session_id)
+    public function read(string $id): string|false
     {
-        return true;
+        return $this->data ?? '';
     }
 
-    public function read($session_id)
+    public function write(string $id, string $data): bool
     {
-        return $this->data;
-    }
-
-    public function write($session_id, $session_data)
-    {
-        $this->data = $session_data;
+        $this->data = $data;
 
         return true;
     }

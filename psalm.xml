@@ -12,7 +12,7 @@
         <directory name="src" />
     </projectFiles>
     <issueHandlers>
-        <!-- The Override attribute requires PHP 8.3+, but this package targets PHP 8.0+. -->
+        <!-- The Override attribute requires PHP 8.3+, but this package targets PHP 8.1+. -->
         <MissingOverrideAttribute errorLevel="suppress" />
         <!-- Aura\Html\HelperLocator exposes helpers via __get/__call magic methods. -->
         <UndefinedMagicMethod>
@@ -27,21 +27,5 @@
                 <file name="src/AntiCsrf.php" />
             </errorLevel>
         </MoreSpecificImplementedParamType>
-        <!--
-            Psalm misresolves Ray\Di\Bind and Ray\Aop\Pointcut signatures inside
-            Ray\Di\AbstractModule::bindInterceptor() when AbstractModule is reached
-            through a two-level inheritance chain (AuraInputModule -> WebFormModule
-            -> AbstractModule). The vendor code itself is correct.
-        -->
-        <InvalidArgument>
-            <errorLevel type="suppress">
-                <referencedFunction name="Ray\Aop\Pointcut::__construct" />
-            </errorLevel>
-        </InvalidArgument>
-        <TooManyArguments>
-            <errorLevel type="suppress">
-                <referencedFunction name="Ray\Di\Bind::__construct" />
-            </errorLevel>
-        </TooManyArguments>
     </issueHandlers>
 </psalm>

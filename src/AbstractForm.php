@@ -40,6 +40,7 @@ abstract class AbstractForm extends Fieldset implements FormInterface
     protected array|null $errorMessages = null;
     protected HelperLocator $helper;
     protected AntiCsrfInterface|null $antiCsrf = null;
+    private bool $filterApplied = false;
 
     public function __construct()
     {
@@ -48,6 +49,8 @@ abstract class AbstractForm extends Fieldset implements FormInterface
     public function __clone()
     {
         $this->filter = clone $this->filter;
+        $this->errorMessages = null;
+        $this->filterApplied = false;
         $this->init();
     }
 
@@ -78,7 +81,9 @@ abstract class AbstractForm extends Fieldset implements FormInterface
     ): void {
         assert($builder instanceof Builder);
         $this->builder = $builder;
-        $this->filter = $filterFactory->newSubjectFilter();
+        $filter = $filterFactory->newSubjectFilter();
+        assert($filter instanceof SubjectFilter);
+        $this->filter = $filter;
         $this->helper = $helperFactory->newInstance();
     }
 
@@ -118,13 +123,13 @@ abstract class AbstractForm extends Fieldset implements FormInterface
     /** {@inheritDoc} */
     public function error(string $input): string
     {
-        if ($this->errorMessages === null) {
-            /** @var FailureCollection|null $failure */
-            $failure = $this->filter->getFailures();
-            if ($failure === null) {
-                return '';
-            }
+        if (! $this->filterApplied) {
+            return '';
+        }
 
+        if ($this->errorMessages === null) {
+            /** @var FailureCollection $failure */
+            $failure = $this->filter->getFailures();
             /** @var array<string, array<int, string>> $messages */
             $messages = $failure->getMessages();
             $this->errorMessages = $messages;
@@ -170,6 +175,8 @@ abstract class AbstractForm extends Fieldset implements FormInterface
         }
 
         $this->fill($data);
+        $this->errorMessages = null;
+        $this->filterApplied = true;
 
         return $this->filter->apply($data);
     }
@@ -181,12 +188,12 @@ abstract class AbstractForm extends Fieldset implements FormInterface
      */
     public function getFailureMessages(): array
     {
-        /** @var FailureCollection|null $failure */
-        $failure = $this->filter->getFailures();
-        if ($failure === null) {
+        if (! $this->filterApplied) {
             return [];
         }
 
+        /** @var FailureCollection $failure */
+        $failure = $this->filter->getFailures();
         /** @var array<string, array<int, string>> $messages */
         $messages = $failure->getMessages();
 
